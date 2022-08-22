@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "parcel index.html",
-    "build": "parcel build index.html",
+    "start": "serve",
+    "build": "parcel build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -22,6 +22,7 @@
     ]
   },
   "dependencies": {
-    "prettier": "^2.7.1"
+    "prettier": "^2.7.1",
+    "serve": "latest"
   }
 }
