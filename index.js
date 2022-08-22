@@ -1,6 +1,8 @@
 import { LEVEL, OBJECT_TYPE } from "./setup";
+import { randomMovement } from "./ghostMoves";
 import GameBoard from "./GameBoard";
 import Pacman from "./Pacman";
+import Ghost from "./Ghost";
 
 // DOM Elements
 const gameGrid = document.querySelector("#game");
