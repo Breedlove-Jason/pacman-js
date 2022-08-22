@@ -12,7 +12,7 @@ class Pacman {
 
   shouldMove() {
     if (!this.dir) {
-      return false;
+      return;
     }
 
     if (this.timer === this.speed) {
@@ -54,9 +54,9 @@ class Pacman {
     }
 
     const nextMovePos = this.pos + dir.movement;
-    if (objectExist(nextMovePos, OBJECT_TYPE.WALL)) {
-      return (this.dir = dir);
-    }
+    if (objectExist(nextMovePos, OBJECT_TYPE.WALL)) return;
+
+    this.dir = dir;
   }
 }
 export default Pacman;
