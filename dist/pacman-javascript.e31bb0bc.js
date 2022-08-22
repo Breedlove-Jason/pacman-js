@@ -526,10 +526,16 @@ var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/creat
 
 var _setup = require("./setup");
 
+var _ghostMoves = require("./ghostMoves");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var Ghost = /*#__PURE__*/function () {
-  function Ghost(speed, startPos, movement, name) {
+  function Ghost() {
+    var speed = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 5;
+    var startPos = arguments.length > 1 ? arguments[1] : undefined;
+    var movement = arguments.length > 2 ? arguments[2] : undefined;
+    var name = arguments.length > 3 ? arguments[3] : undefined;
     (0, _classCallCheck2.default)(this, Ghost);
     this.name = name;
     this.movement = movement;
@@ -537,6 +543,7 @@ var Ghost = /*#__PURE__*/function () {
     this.pos = startPos;
     this.dir = _setup.DIRECTIONS.ArrowRight;
     this.speed = speed;
+    this.timer = 0;
     this.isScared = false;
     this.rotation = false;
   }
@@ -550,7 +557,6 @@ var Ghost = /*#__PURE__*/function () {
       }
 
       this.timer++;
-      return false;
     }
   }, {
     key: "getNextMove",
@@ -587,7 +593,7 @@ var Ghost = /*#__PURE__*/function () {
 
 var _default = Ghost;
 exports.default = _default;
-},{"@babel/runtime/helpers/toConsumableArray":"node_modules/@babel/runtime/helpers/toConsumableArray.js","@babel/runtime/helpers/classCallCheck":"node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"node_modules/@babel/runtime/helpers/createClass.js","./setup":"setup.js"}],"index.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/toConsumableArray":"node_modules/@babel/runtime/helpers/toConsumableArray.js","@babel/runtime/helpers/classCallCheck":"node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"node_modules/@babel/runtime/helpers/createClass.js","./setup":"setup.js","./ghostMoves":"ghostMoves.js"}],"index.js":[function(require,module,exports) {
 "use strict";
 
 var _setup = require("./setup");
@@ -625,6 +631,9 @@ function checkCollision(pacman, ghosts) {}
 
 function gameLoop(pacman, ghosts) {
   gameBoard.moveCharacter(pacman);
+  ghosts.forEach(function (ghost) {
+    return gameBoard.moveCharacter(ghost);
+  });
 }
 
 function startGame() {
@@ -638,8 +647,9 @@ function startGame() {
   document.addEventListener("keydown", function (e) {
     return pacman.handleKeyInput(e, gameBoard.objectExist);
   });
+  var ghosts = [new _Ghost.default(5, 188, _ghostMoves.randomMovement, _setup.OBJECT_TYPE.BLINKY), new _Ghost.default(4, 209, _ghostMoves.randomMovement, _setup.OBJECT_TYPE.PINKY), new _Ghost.default(3, 230, _ghostMoves.randomMovement, _setup.OBJECT_TYPE.INKY), new _Ghost.default(2, 251, _ghostMoves.randomMovement, _setup.OBJECT_TYPE.CLYDE)];
   timer = setInterval(function () {
-    return gameLoop(pacman);
+    return gameLoop(pacman, ghosts);
   }, GLOBAL_SPEED);
 } //Initialize Game
 
@@ -673,7 +683,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "45617" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "45525" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
