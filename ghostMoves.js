@@ -1,22 +1,11 @@
-import { DIRECTIONS, OBJECT_TYPE } from "./setup";
+import { DIRECTIONS, OBJECT_TYPE } from './setup.js';
 
-// Primitive random movement
-
+// Choose from a finite set: an enclosed ghost waits instead of blocking the game.
 export function randomMovement(position, direction, objectExist) {
-  let dir = direction;
-  let nextMovePos = position + dir.movement;
-
-  // create array from directions object keys
-  const keys = Object.keys(DIRECTIONS);
-
-  while (
-    objectExist(nextMovePos, OBJECT_TYPE.WALL) ||
-    objectExist(nextMovePos, OBJECT_TYPE.GHOST)
-  ) {
-    // get random direction
-    const key = keys[Math.floor(Math.random() * keys.length)];
-    dir = DIRECTIONS[key];
-    nextMovePos = position + dir.movement;
-  }
-  return { nextMovePos, direction: dir };
+  const valid = Object.values(DIRECTIONS).filter(dir =>
+    !objectExist(position + dir.movement, OBJECT_TYPE.WALL) &&
+    !objectExist(position + dir.movement, OBJECT_TYPE.GHOST));
+  if (!valid.length) return {nextMovePos: position, direction};
+  const dir = valid.includes(direction) ? direction : valid[Math.floor(Math.random() * valid.length)];
+  return {nextMovePos: position + dir.movement, direction: dir};
 }

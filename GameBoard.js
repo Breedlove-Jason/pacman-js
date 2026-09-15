@@ -1,4 +1,4 @@
-import { GRID_SIZE, CELL_SIZE, OBJECT_TYPE, CLASS_LIST } from "./setup";
+import { GRID_SIZE, CELL_SIZE, OBJECT_TYPE, CLASS_LIST } from "./setup.js";
 
 class GameBoard {
   constructor(DOMGrid) {
@@ -18,12 +18,12 @@ class GameBoard {
     this.dotCount = 0;
     this.grid = [];
     this.DOMGrid.innerHTML = "";
-    this.DOMGrid.style.cssText = `grid-template-columns: repeat(${GRID_SIZE}, ${CELL_SIZE}px)`;
+    this.DOMGrid.style.cssText = `grid-template-columns: repeat(${GRID_SIZE}, 1fr)`;
 
     level.forEach((square, index) => {
       const div = document.createElement("div");
       div.classList.add("square", CLASS_LIST[square]);
-      div.style.cssText = `width: ${CELL_SIZE}px; height: ${CELL_SIZE}px;`;
+      
       this.DOMGrid.appendChild(div);
       this.grid.push(div);
 
@@ -40,7 +40,7 @@ class GameBoard {
   }
 
   objectExist = (pos, object) => {
-    return this.grid[pos].classList.contains(object);
+    return this.grid[pos] ? this.grid[pos].classList.contains(object) : object === OBJECT_TYPE.WALL;
   };
 
   rotateDiv(pos, deg) {

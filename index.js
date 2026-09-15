@@ -1,133 +1,114 @@
-import { LEVEL, OBJECT_TYPE } from "./setup";
-import { randomMovement } from "./ghostMoves";
-import GameBoard from "./GameBoard";
-import Pacman from "./Pacman";
-import Ghost from "./Ghost";
-import soundDot from "./sounds/munch.wav";
-import soundPill from "./sounds/pill.wav";
-import soundGameStart from "./sounds/game_start.wav";
-import soundGameOver from "./sounds/death.wav";
-import soundGhost from "./sounds/eat_ghost.wav";
+import { LEVEL, OBJECT_TYPE as O } from './setup.js';
+import { randomMovement } from './ghostMoves.js';
+import GameBoard from './GameBoard.js';
+import Pacman from './Pacman.js';
+import Ghost from './Ghost.js';
 
-// DOM Elements
-const gameGrid = document.querySelector("#game");
-const scoreTable = document.querySelector("#score");
-const startButton = document.querySelector("#start-button");
-
-// Game Constants
-const POWER_PILL_TIME = 10000;
-const GLOBAL_SPEED = 80;
-const gameBoard = GameBoard.createGameBoard(gameGrid, LEVEL);
-
-// Initial Setup
-let score = 0;
-let timer = null;
-let gameWin = false;
-let powerPillActive = false;
-let powerPillTimer = null;
-
-// Sound Effects
-function playAudio(audio) {
-  const soundEffect = new Audio(audio);
-  soundEffect.play();
+const board = GameBoard.createGameBoard(document.querySelector('#game'), LEVEL);
+const start = document.querySelector('#start-button');
+const pause = document.querySelector('#pause-button');
+const status = document.querySelector('#status');
+const scoreText = document.querySelector('#score');
+const bestText = document.querySelector('#best');
+let pacman, ghosts = [], score = 0, timer, powerUntil = 0, pausedAt = 0, state = 'ready', muted = true, best = 0;
+try { best = Number(localStorage.getItem('pacman-best')) || 0; } catch {}
+bestText.textContent = best;
+const audio = Object.fromEntries(['munch','pill','game_start','death','eat_ghost'].map(name=>[name,new Audio('./sounds/'+name+'.wav')]));
+function sound(name) {
+  if (muted) return;
+  audio[name].currentTime = 0;
+  audio[name].play().catch(()=>{});
 }
-
-function gameOver(pacman, grid) {
-  playAudio(soundGameOver);
-  document.removeEventListener("keydown", (e) =>
-    pacman.handleKeyInput(e, gameBoard.objectExist)
-  );
-  gameBoard.showGameStatus(gameWin);
-
-  clearInterval(timer);
-
-  startButton.classList.remove("hide");
-}
-
-function checkCollision(pacman, ghosts) {
-  const collidedGhost = ghosts.find((ghost) => pacman.pos === ghost.pos);
-  if (collidedGhost) {
-    if (pacman.powerPill) {
-      playAudio(soundGhost);
-      gameBoard.removeObject(collidedGhost.pos, [
-        OBJECT_TYPE.GHOST,
-        OBJECT_TYPE.SCARED,
-        collidedGhost.name,
-      ]);
-      collidedGhost.pos = collidedGhost.startPos;
-      score += 100;
-    } else {
-      gameBoard.removeObject(pacman.pos, [OBJECT_TYPE.PACMAN]);
-      gameBoard.rotateDiv(pacman.pos, 0);
-      gameOver(pacman, gameBoard.grid);
-    }
+function updateScore() {
+  scoreText.textContent = score;
+  if (score > best) {
+    best = score; bestText.textContent = best;
+    try { localStorage.setItem('pacman-best',String(best)); } catch {}
   }
 }
-
-function gameLoop(pacman, ghosts) {
-  gameBoard.moveCharacter(pacman);
-  checkCollision(pacman, ghosts);
-  ghosts.forEach((ghost) => gameBoard.moveCharacter(ghost));
-  checkCollision(pacman, ghosts);
-
-  // check if pacman is eating dots
-  if (gameBoard.objectExist(pacman.pos, OBJECT_TYPE.DOT)) {
-    playAudio(soundDot);
-    gameBoard.removeObject(pacman.pos, [OBJECT_TYPE.DOT]);
-    gameBoard.dotCount--;
-    score += 10;
-  }
-  // check if pacman is eating powerPill
-  if (gameBoard.objectExist(pacman.pos, OBJECT_TYPE.PILL)) {
-    playAudio(soundPill);
-    gameBoard.removeObject(pacman.pos, [OBJECT_TYPE.PILL]);
-    pacman.powerPill = true;
-    score += 50;
-
-    clearTimeout(powerPillTimer);
-    powerPillTimer = setTimeout(
-      () => (pacman.powerPill = false),
-      POWER_PILL_TIME
-    );
-  }
-  // change ghost scare mode
-  if (pacman.powerPill != powerPillActive) {
-    powerPillActive = pacman.powerPill;
-    ghosts.forEach((ghost) => (ghost.isScared = pacman.powerPill));
-  }
-  // check if all dots have been eaten
-  if (gameBoard.dotCount === 0) {
-    gameWin = true;
-    gameOver(pacman, gameBoard.grid);
-  }
-
-  //show score
-  scoreTable.innerHTML = score;
+function finish(won) {
+  if (state !== 'running') return;
+  state = 'ended'; clearInterval(timer); powerUntil = 0;
+  sound(won ? 'game_start' : 'death');
+  status.textContent = won ? 'Maze cleared. Beautiful run!' : 'Caught! Ready for another run?';
+  board.showGameStatus(won);
+  pause.disabled = true; start.textContent = 'Play again';
 }
-
+function collide() {
+  for (const ghost of ghosts) {
+    if (ghost.pos !== pacman.pos) continue;
+    if (!pacman.powerPill) { finish(false); return true; }
+    sound('eat_ghost');
+    board.removeObject(ghost.pos,[O.GHOST,O.SCARED,ghost.name]);
+    ghost.pos = ghost.startPos;
+    ghost.timer = 0;
+    board.addObject(ghost.pos,[O.GHOST,ghost.name,O.SCARED]);
+    score += 100; updateScore();
+  }
+  return false;
+}
+function tick() {
+  if (state !== 'running') return;
+  pacman.powerPill = performance.now() < powerUntil;
+  ghosts.forEach(g=>{
+    g.isScared = pacman.powerPill;
+    board.grid[g.pos].classList.toggle(O.SCARED,g.isScared);
+  });
+  board.moveCharacter(pacman);
+  // Collect before collision: a pellet protects the player on this very step.
+  if (board.objectExist(pacman.pos,O.DOT)) {
+    board.removeObject(pacman.pos,[O.DOT]); board.dotCount--; score += 10; sound('munch');
+  }
+  if (board.objectExist(pacman.pos,O.PILL)) {
+    board.removeObject(pacman.pos,[O.PILL]); score += 50; sound('pill');
+    powerUntil = performance.now()+10000; pacman.powerPill = true;
+    ghosts.forEach(g=>{g.isScared=true; board.addObject(g.pos,[O.SCARED]);});
+  }
+  updateScore();
+  if (collide()) return;
+  for (const ghost of ghosts) {
+    board.moveCharacter(ghost);
+    if (collide()) return;
+  }
+  const pillsRemain = board.grid.some(cell=>cell.classList.contains(O.PILL));
+  if (board.dotCount === 0 && !pillsRemain) return finish(true);
+  status.textContent = pacman.powerPill ? 'Power up · chase the ghosts!' : 'Collect every dot and power pellet.';
+}
 function startGame() {
-  playAudio(soundGameStart);
-  gameWin = false;
-  powerPillActive = false;
-  score = 0;
-  startButton.classList.add("hide");
-
-  gameBoard.createGrid(LEVEL);
-
-  const pacman = new Pacman(2, 287);
-  gameBoard.addObject(287, [OBJECT_TYPE.PACMAN]);
-  document.addEventListener("keydown", (e) =>
-    pacman.handleKeyInput(e, gameBoard.objectExist)
-  );
-
-  const ghosts = [
-    new Ghost(5, 188, randomMovement, OBJECT_TYPE.BLINKY),
-    new Ghost(4, 209, randomMovement, OBJECT_TYPE.PINKY),
-    new Ghost(3, 230, randomMovement, OBJECT_TYPE.INKY),
-    new Ghost(2, 251, randomMovement, OBJECT_TYPE.CLYDE),
+  clearInterval(timer); powerUntil=0; score=0;
+  board.createGrid(LEVEL); pacman = new Pacman(2,287);
+  board.addObject(pacman.pos,[O.PACMAN]);
+  ghosts = [
+    new Ghost(5,188,randomMovement,O.BLINKY),
+    new Ghost(4,209,randomMovement,O.PINKY),
+    new Ghost(3,230,randomMovement,O.INKY),
+    new Ghost(2,251,randomMovement,O.CLYDE),
   ];
-  timer = setInterval(() => gameLoop(pacman, ghosts), GLOBAL_SPEED);
+  ghosts.forEach(g=>board.addObject(g.pos,[O.GHOST,g.name]));
+  state='running'; start.textContent='Restart'; pause.disabled=false; pause.textContent='Pause';
+  updateScore(); status.textContent='Use arrow keys, WASD, or the direction buttons.'; sound('game_start');
+  timer=setInterval(tick,80);
 }
-
-//Initialize Game
-startButton.addEventListener("click", startGame);
+function togglePause() {
+  if (state==='running') {
+    state='paused'; pausedAt=performance.now(); pause.textContent='Resume'; status.textContent='Paused · take your time.';
+  } else if (state==='paused') {
+    powerUntil += performance.now()-pausedAt; state='running'; pause.textContent='Pause';
+  }
+}
+start.addEventListener('click',startGame);
+pause.addEventListener('click',togglePause);
+document.querySelector('#sound-button').addEventListener('click',e=>{
+  muted=!muted; e.currentTarget.textContent=muted?'Sound off':'Sound on'; e.currentTarget.setAttribute('aria-pressed',String(!muted));
+  if(muted) Object.values(audio).forEach(a=>a.pause());
+});
+document.addEventListener('keydown',e=>{
+  if (e.target.matches('input,textarea,select')) return;
+  if (e.code==='Space' && e.target.tagName!=='BUTTON') {e.preventDefault();togglePause();return;}
+  if (state==='running') pacman.handleKeyInput(e,board.objectExist);
+});
+document.querySelectorAll('[data-direction]').forEach(button=>button.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  if(state==='running') pacman.handleKeyInput({key:button.dataset.direction,preventDefault(){}},board.objectExist);
+}));
+document.addEventListener('visibilitychange',()=>{if(document.hidden && state==='running') togglePause();});

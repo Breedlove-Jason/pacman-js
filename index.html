@@ -1,17 +1,25 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="style.css">
-    <title>JS Pacman</title>
-  </head>
-  <body>
-    <div id="wrapper">
-      <div id="game"></div>
-      <div id="score"></div>
-      <button id="start-button">Start Game</button>
-    </div>
-    <script src="./index.js"></script>
-  </body>
-</html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0c1020">
+<meta name="description" content="Play Jason Breedlove's vanilla JavaScript maze arcade game. Collect dots, dodge ghosts, and chase a new personal best.">
+<title>Pacman JS · Jason Breedlove</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header><a href="https://www.jasonbreedlove.dev/#projects">← Jason Breedlove</a><a href="https://github.com/Breedlove-Jason/pacman-js">View source ↗</a></header>
+<main>
+<section class="intro"><p class="eyebrow">THE JAVASCRIPT ARCADE / 01</p><h1>One more<br><span>run.</span></h1><p class="lede">A familiar maze. Four restless ghosts.<br>How far can you go?</p>
+<div class="instructions"><h2>Know the maze</h2><p><b>10</b> per dot · <b>50</b> per power pellet<br><b>100</b> per ghost while powered up</p><p>Move with <kbd>↑ ↓ ← →</kbd> or <kbd>W A S D</kbd>.<br><kbd>Space</kbd> pauses. Touch controls below.</p></div>
+<p class="credit">Built with vanilla JavaScript & CSS.<br>An unofficial educational tribute to Pac-Man.</p></section>
+<section class="cabinet" aria-label="Pacman arcade game">
+<div class="hud"><div><span>SCORE</span><strong id="score">0</strong></div><div><span>PERSONAL BEST</span><strong id="best">0</strong></div><span class="live-dot" aria-hidden="true">●</span></div>
+<div id="game" role="img" aria-label="Pacman maze with dots, power pellets, and four ghosts"></div>
+<p id="status" role="status">Ready when you are. Press Start game.</p>
+<div class="actions"><button id="start-button">Start game</button><button id="pause-button" disabled>Pause</button><button id="sound-button" aria-pressed="false">Sound off</button></div>
+<div class="dpad" aria-label="Direction controls"><button data-direction="ArrowUp" aria-label="Move up">↑</button><button data-direction="ArrowLeft" aria-label="Move left">←</button><button data-direction="ArrowDown" aria-label="Move down">↓</button><button data-direction="ArrowRight" aria-label="Move right">→</button></div>
+</section>
+</main>
+<script type="module" src="./index.js"></script>
+</body></html>

@@ -1,10 +1,11 @@
-import { OBJECT_TYPE, DIRECTIONS } from "./setup";
+import { OBJECT_TYPE, DIRECTIONS } from "./setup.js";
 
 class Pacman {
   constructor(speed, startPos) {
     this.pos = startPos;
     this.speed = speed;
     this.dir = null;
+    this.queuedDir = null;
     this.timer = 0;
     this.powerPill = false;
     this.rotation = true;
@@ -24,6 +25,10 @@ class Pacman {
   }
 
   getNextMove(objectExist) {
+    if (this.queuedDir && !objectExist(this.pos + this.queuedDir.movement, OBJECT_TYPE.WALL) && !objectExist(this.pos + this.queuedDir.movement, OBJECT_TYPE.GHOSTLAIR)) {
+      this.dir = this.queuedDir;
+      this.queuedDir = null;
+    }
     let nextMovePos = this.pos + this.dir.movement;
     if (
       objectExist(nextMovePos, OBJECT_TYPE.WALL) ||
@@ -46,21 +51,12 @@ class Pacman {
   }
 
   handleKeyInput(e, objectExist) {
-    let dir;
-    if (e.keyCode >= 37 && e.keyCode <= 40) {
-      dir = DIRECTIONS[e.key];
-    } else {
-      return;
-    }
-
-    const nextMovePos = this.pos + dir.movement;
-    if (
-      objectExist(nextMovePos, OBJECT_TYPE.WALL) ||
-      objectExist(nextMovePos, OBJECT_TYPE.GHOSTLAIR)
-    )
-      return;
-
-    this.dir = dir;
+    const aliases = {w:'ArrowUp', a:'ArrowLeft', s:'ArrowDown', d:'ArrowRight'};
+    const dir = DIRECTIONS[aliases[e.key.toLowerCase()] || e.key];
+    if (!dir) return;
+    e.preventDefault();
+    this.queuedDir = dir;
+    if (!this.dir) this.dir = dir;
   }
 }
 export default Pacman;

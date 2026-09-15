@@ -1,4 +1,4 @@
-/node_modules/
-/.cache/
-
-.idea/
+node_modules/
+dist/
+.DS_Store
+.vercel/
